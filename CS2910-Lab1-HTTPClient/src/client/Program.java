@@ -14,6 +14,7 @@ public class Program {
 	public static void main(String[] args) {
 
 		String hostName = getInfo("Enter Hostname: ");
+		
 		Integer port = null;
 		while (port == null) {
 			try {
@@ -22,8 +23,9 @@ public class Program {
 				System.out.println("Enter a valid number");
 			}
 		}
+		String resource = getInfo("Enter resource: ");
 
-		HttpClient client = new HttpClient(hostName, port);
+		HttpClient client = new HttpClient(hostName, port, resource);
 		client.run();
 	}
 
