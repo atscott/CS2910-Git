@@ -14,7 +14,7 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class HttpClient {
-	
+
 	public static final String CRLF = "\r\n";
 
 	private static DataInputStream inputStream;
@@ -32,7 +32,7 @@ public class HttpClient {
 		UI ui = new UI();
 	}
 
-	public static void startRequest(String hostName, int port) {
+	public static void startRequest(String hostName, int port, String resource) {
 		try {
 			socket = new Socket(hostName, port);
 			inputStream = new DataInputStream(socket.getInputStream());
@@ -40,19 +40,20 @@ public class HttpClient {
 			textFile = new File("/Users/dev/Documents/text.txt");
 			fos = new FileOutputStream(textFile);
 			socket.setSoTimeout(1000);
-			
-			outputStream.writeBytes("GET / HTTP/1.1"+CRLF+"Host: "+hostName+ CRLF+ CRLF);
-			
+
+			outputStream.writeBytes("GET " + resource + " HTTP/1.1" + CRLF
+					+ "Host: " + hostName + CRLF + CRLF);
+
 			int n = 0;
 			byte[] bytes = new byte[1024];
 			while ((n = inputStream.read(bytes)) > 0) {
 				fos.write(bytes, 0, n);
-				System.out.println("writing "+n);
+				System.out.println("writing " + n);
 			}
 			System.out.println("done");
 
-			//parseHtml(true,transferEncoding);
-			//parseHtml(inputStream, HTTPHeader);
+			// parseHtml(true,transferEncoding);
+			// parseHtml(inputStream, HTTPHeader);
 
 		} catch (SocketTimeoutException ste) {
 			System.out.println("connection timed out");
@@ -69,7 +70,7 @@ public class HttpClient {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
+
 		}
 	}
 }
