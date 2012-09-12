@@ -1,8 +1,11 @@
 package client;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -133,40 +136,42 @@ public class HttpClient {
 
 	private String getResponse() {
 
+		
 		StringBuilder sb = new StringBuilder();
-
+		
 		try {
-			socket.setSoTimeout(3000);
+			
+			FileWriter fStream = new FileWriter("out");
+			BufferedWriter out = new BufferedWriter(fStream);
 
-			
-			BufferedReader responseFromServer = new BufferedReader(
-					new InputStreamReader(socket.getInputStream()));
+			try {
+				socket.setSoTimeout(3000);
 
-//			InputStream input = socket.getInputStream();
-//			boolean cont = true;
-//			while(cont){
-//				byte[] buffer = new byte[1024];
-//				int len = input.read(buffer);
-//				if(len < 0){
-//					cont = false;
-//				}else{
-//					sb.append(new String(buffer));
-//				}
-//				
-//			}
-			
-			
-			int result;
-			while ((result = responseFromServer.read()) != -1) {
-				sb.append(Character.toChars(result));
+				BufferedReader responseFromServer = new BufferedReader(
+						new InputStreamReader(socket.getInputStream()));
+				
+				int result;
+				while ((result = responseFromServer.read()) != -1) {
+					char[] chars = Character.toChars(result);
+					for(char c : chars){
+						sb.append(c);
+						out.append(c);
+					}
+				}
+
+			} catch (SocketTimeoutException e) {
+				System.out.println("getResponse: SocketTimeoutException");
+			} catch (IOException e) {
+				System.out.println("getResponse: IOException");
 			}
-
-		} catch (SocketTimeoutException e) {
-			System.out.println("getResponse: SocketTimeoutException");
-		} catch (IOException e) {
-			System.out.println("getResponse: IOException");
+			
+			out.close();
+			
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
-
+		
 		return sb.toString();
 	}
 
