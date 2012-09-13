@@ -2,9 +2,9 @@ package client;
 
 public class Constants {
 
-	public static final int WINDOW_HEIGHT = 150;
+	public static final int WINDOW_HEIGHT = 200;
 	public static final int WINDOW_WIDTH = 700;
-	public static final boolean WINDOW_RESIZEABLE = true;
+	public static final boolean WINDOW_RESIZEABLE = false;
 	
 	public static final String CONTENT_TYPE = "Content-Type";
 	public static final String CONTENT_LENGTH = "Content-Length";

@@ -36,8 +36,7 @@ public class HttpClient {
 	public static void startRequest(String hostName, int port, String resource) {
 		try {
 			socket = new Socket(hostName, port);
-			bufferedReader = new BufferedReader(new InputStreamReader(
-					socket.getInputStream()));
+			bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			outputStream = new DataOutputStream(socket.getOutputStream());
 			inputStream = new DataInputStream(socket.getInputStream());
 			textFile = new File("text.txt");
