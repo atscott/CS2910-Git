@@ -85,7 +85,7 @@ public class HttpClient {
 				saveRawBytes(inputStream, header, resource);
 			}
 			//Prints out the human readable HTTPHeader class
-			System.out.println(""+header.toString());
+			System.out.println("\n\n"+header.toString());
 			// TODO call you method here
 
 		} catch (SocketTimeoutException ste) {
@@ -125,13 +125,11 @@ public class HttpClient {
 			int bytesRead = 0;
 			while (bytesRead < header.getContentLength()) {
 				int byteToWrite = inputStream.read();
-				System.out.println(""+byteToWrite);
-				if (byteToWrite == -1) {
-					break;
-				} else {
+				//System.out.println(""+byteToWrite);
+				
 					pngStream.write(byteToWrite);
 					bytesRead++;
-				}
+				
 			}
 
 
