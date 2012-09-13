@@ -111,12 +111,16 @@ public class UI extends JFrame {
 						&& txtHostName.getText().length() > 0) {
 					if (!UI.this.validateHostName() && !UI.this.validatePortNumber()) {
 						String resource = txtResourceID.getText();
-						if (resource.charAt(0) != '/') {
-							resource = "/"+resource;
+						try {
+							if (resource.charAt(0) != '/') {
+								resource = "/"+resource;
+							}
+						} catch (StringIndexOutOfBoundsException sioobe) {
+							resource = "/";
 						}
 						HttpClient.startRequest(txtHostName.getText(),
 								Integer.parseInt(txtPortNumber.getText()),
-								txtResourceID.getText());
+								resource);
 					}
 				}
 			}
