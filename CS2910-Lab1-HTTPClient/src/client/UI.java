@@ -111,7 +111,8 @@ public class UI extends JFrame {
 						&& txtHostName.getText().length() > 0) {
 					if (!UI.this.validateHostName() && !UI.this.validatePortNumber()) {
 						HttpClient.startRequest(txtHostName.getText(),
-								Integer.parseInt(txtPortNumber.getText()));
+								Integer.parseInt(txtPortNumber.getText()),
+								txtResourceID.getText());
 					}
 				}
 			}
