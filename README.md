@@ -1,0 +1,1 @@
+If you need to, email me at my msoe email aultj@msoe.edu to explain the enum thing.  It took me a little bit to get it.
