@@ -109,11 +109,9 @@ public class UI extends JFrame {
 						&& !lblHostNameWarning.isVisible()
 						&& txtPortNumber.getText().length() > 0
 						&& txtHostName.getText().length() > 0) {
-					if (!UI.this.validateHostName()
-							&& !UI.this.validatePortNumber()) {
+					if (!UI.this.validateHostName() && !UI.this.validatePortNumber()) {
 						HttpClient.startRequest(txtHostName.getText(),
-								Integer.parseInt(txtPortNumber.getText()),
-								txtResourceID.getText());
+								Integer.parseInt(txtPortNumber.getText()));
 					}
 				}
 			}

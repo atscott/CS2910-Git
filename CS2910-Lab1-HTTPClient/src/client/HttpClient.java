@@ -1,25 +1,24 @@
 package client;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 public class HttpClient {
-
+	
 	public static final String CRLF = "\r\n";
 
-	private static DataInputStream inputStream;
+	private static BufferedReader bufferedReader;
 	private static DataOutputStream outputStream;
 	private static FileOutputStream fos;
 	private static Socket socket;
 	private static File textFile;
-	private static File outputFile;
 	private static HTTPHeader header;
 
 	/**
@@ -29,33 +28,45 @@ public class HttpClient {
 		UI ui = new UI();
 	}
 
-	public static void startRequest(String hostName, int port, String resource) {
+	public static void startRequest(String hostName, int port) {
 		try {
 			socket = new Socket(hostName, port);
-			inputStream = new DataInputStream(socket.getInputStream());
+			bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			outputStream = new DataOutputStream(socket.getOutputStream());
-			textFile = new File("abc.txt");
+			textFile = new File("/Users/dev/Documents/text.txt");
 			fos = new FileOutputStream(textFile);
 			socket.setSoTimeout(1000);
-
-			outputStream.writeBytes("GET " + resource + " HTTP/1.1" + CRLF
-					+ "Host: " + hostName + CRLF + CRLF);
-
+			header = new HTTPHeader();
 			
-			// This will read the entire header. sb.toString() is the header as a string
-			// I will leave it up to you to parse it. Or rewrite the entire header reading.
-			StringBuilder sb = new StringBuilder();
-			while (!sb.toString().endsWith("\r\n\r\n")) {
-				sb.append(inputStream.readChar());
+			outputStream.writeBytes("GET / HTTP/1.1"+CRLF+"Host: "+hostName+ CRLF+ CRLF);
+			
+			String s = bufferedReader.readLine();
+			header.setLocation(hostName);
+			while (!s.equals("")) {
+				System.out.println(s);
+				s = bufferedReader.readLine();
+				if (s.contains(Constants.CONTENT_TYPE)) {
+					System.out.println(""+s+"----\n"+s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
+					boolean added = header.setContentType(s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
+					if (!added) {
+						System.out.println("Content-Type was not valid.\nExiting");
+					}
+				}
+				if (s.contains(Constants.CONTENT_LENGTH)) {
+					
+					header.setContentLength(Integer.parseInt(s.substring(s.indexOf(":")+1).trim()));
+				}
+				if (s.contains(Constants.TRANSFER_ENCODING)) {
+					if (s.contains("chunked")) {
+						header.setChunkedEncoding(true);
+					}
+				}
 			}
-			
-			
-			savePNG(inputStream);
-			
 			System.out.println("done");
 
-			// parseHtml(true,transferEncoding);
-			// parseHtml(inputStream, HTTPHeader);
+			System.out.println("\n\n"+header.toString());
+			//TODO call you method here
+			
 
 		} catch (SocketTimeoutException ste) {
 			System.out.println("connection timed out");
@@ -66,41 +77,14 @@ public class HttpClient {
 		} finally {
 			try {
 				fos.close();
-				inputStream.close();
+				//inputStream.close();
+				bufferedReader.close();
 				outputStream.close();
 				socket.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			
 		}
 	}
-
-	private static void savePNG(DataInputStream is) {
-		FileOutputStream pngStream = null;
-		try {
-			File pngFile = new File("abc.png");
-			pngStream = new FileOutputStream(pngFile);
-			
-			int n = 0;
-			byte[] bytes = new byte[1024];
-			while ((n = inputStream.read(bytes)) > 0) {
-				pngStream.write(bytes, 0, n);
-			}
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			try {
-				if (pngStream != null) {
-					pngStream.close();
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-	}
-
 }
