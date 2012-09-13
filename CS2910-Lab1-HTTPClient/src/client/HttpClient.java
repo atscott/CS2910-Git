@@ -1,5 +1,6 @@
 package client;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -41,7 +42,7 @@ public class HttpClient {
 			inputStream = new DataInputStream(socket.getInputStream());
 			textFile = new File("text.txt");
 			fos = new FileOutputStream(textFile);
-			socket.setSoTimeout(1000);
+			//socket.setSoTimeout(1000);
 			header = new HTTPHeader();
 
 			outputStream.writeBytes("GET " + resource + " HTTP/1.1" + CRLF
@@ -53,11 +54,19 @@ public class HttpClient {
 				System.out.println(s);
 				s = bufferedReader.readLine();
 				if (s.contains(Constants.CONTENT_TYPE)) {
-					boolean added = header.setContentType(s.substring(
-							s.indexOf(":") + 1).trim());
+					//Looks for the semi-colon that indicates a charset is given, this will
+					//successfully take out the Content-Type
+					int index = s.indexOf(";");
+					boolean added;
+					if (index == -1) {
+						//System.out.println(s.substring(s.indexOf(":") + 1).trim());
+						added = header.setContentType(s.substring(s.indexOf(":") + 1).trim());
+					} else {
+						//System.out.println(s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
+						added = header.setContentType(s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
+					}
 					if (!added) {
-						System.out
-								.println("Content-Type was not valid.\nExiting");
+						System.out.println("Content-Type was not valid.");
 					}
 				}
 				if (s.contains(Constants.CONTENT_LENGTH)) {
@@ -71,12 +80,12 @@ public class HttpClient {
 					}
 				}
 			}
-			System.out.println("done");
-
+			
 			if (header.contentType == MimeType.png) {
 				savePNG(inputStream, header);
 			}
-
+			//Prints out the human readable HTTPHeader class
+			System.out.println(""+header.toString());
 			// TODO call you method here
 
 		} catch (SocketTimeoutException ste) {
@@ -105,16 +114,21 @@ public class HttpClient {
 		try {
 			File pngFile = new File("abc.png");
 			pngStream = new FileOutputStream(pngFile);
-
+			
 			int bytesRead = 0;
 			while (bytesRead < header.getContentLength()) {
-				pngStream.write(inputStream.read());
-				bytesRead++;
+				int byteToWrite = inputStream.read();
+				System.out.println(""+byteToWrite);
+				if (byteToWrite == -1) {
+					break;
+				} else {
+					pngStream.write(byteToWrite);
+					bytesRead++;
+				}
 			}
 
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
 			try {
