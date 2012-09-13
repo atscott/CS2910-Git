@@ -110,6 +110,10 @@ public class UI extends JFrame {
 						&& txtPortNumber.getText().length() > 0
 						&& txtHostName.getText().length() > 0) {
 					if (!UI.this.validateHostName() && !UI.this.validatePortNumber()) {
+						String resource = txtResourceID.getText();
+						if (resource.charAt(0) != '/') {
+							resource = "/"+resource;
+						}
 						HttpClient.startRequest(txtHostName.getText(),
 								Integer.parseInt(txtPortNumber.getText()),
 								txtResourceID.getText());

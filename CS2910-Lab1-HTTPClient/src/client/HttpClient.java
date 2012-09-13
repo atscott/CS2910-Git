@@ -118,7 +118,7 @@ public class HttpClient {
 			int bytesRead = 0;
 			while (bytesRead < header.getContentLength()) {
 				int byteToWrite = inputStream.read();
-				System.out.println(""+byteToWrite);
+				//System.out.println(""+byteToWrite);
 				if (byteToWrite == -1) {
 					break;
 				} else {
