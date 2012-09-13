@@ -82,7 +82,7 @@ public class HttpClient {
 			}
 			
 			if (header.contentType == MimeType.png) {
-				savePNG(inputStream, header);
+				saveRawBytes(inputStream, header, resource);
 			}
 			//Prints out the human readable HTTPHeader class
 			System.out.println(""+header.toString());
@@ -108,17 +108,24 @@ public class HttpClient {
 		}
 	}
 
-	private static void savePNG(DataInputStream inputStream, HTTPHeader header) {
-		FileOutputStream pngStream = null;
+
+	private static void saveRawBytes(DataInputStream inputStream, HTTPHeader header, String resource) {
 		
+		String extension = "";
+		int index = resource.lastIndexOf('.');
+		if(index >= 0){
+			extension = resource.substring(index);
+		}
+		
+		FileOutputStream pngStream = null;
 		try {
-			File pngFile = new File("abc.png");
+			File pngFile = new File("output" + extension);
 			pngStream = new FileOutputStream(pngFile);
 			
 			int bytesRead = 0;
 			while (bytesRead < header.getContentLength()) {
 				int byteToWrite = inputStream.read();
-				//System.out.println(""+byteToWrite);
+				System.out.println(""+byteToWrite);
 				if (byteToWrite == -1) {
 					break;
 				} else {
