@@ -1,17 +1,14 @@
 package client;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.Scanner;
 
 public class HttpClient {
 
@@ -37,19 +34,24 @@ public class HttpClient {
 			socket = new Socket(hostName, port);
 			inputStream = new DataInputStream(socket.getInputStream());
 			outputStream = new DataOutputStream(socket.getOutputStream());
-			textFile = new File("/Users/dev/Documents/text.txt");
+			textFile = new File("abc.txt");
 			fos = new FileOutputStream(textFile);
 			socket.setSoTimeout(1000);
 
 			outputStream.writeBytes("GET " + resource + " HTTP/1.1" + CRLF
 					+ "Host: " + hostName + CRLF + CRLF);
 
-			int n = 0;
-			byte[] bytes = new byte[1024];
-			while ((n = inputStream.read(bytes)) > 0) {
-				fos.write(bytes, 0, n);
-				System.out.println("writing " + n);
+			
+			// This will read the entire header. sb.toString() is the header as a string
+			// I will leave it up to you to parse it. Or rewrite the entire header reading.
+			StringBuilder sb = new StringBuilder();
+			while (!sb.toString().endsWith("\r\n\r\n")) {
+				sb.append(inputStream.readChar());
 			}
+			
+			
+			savePNG(inputStream);
+			
 			System.out.println("done");
 
 			// parseHtml(true,transferEncoding);
@@ -70,7 +72,35 @@ public class HttpClient {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-
 		}
 	}
+
+	private static void savePNG(DataInputStream is) {
+		FileOutputStream pngStream = null;
+		try {
+			File pngFile = new File("abc.png");
+			pngStream = new FileOutputStream(pngFile);
+			
+			int n = 0;
+			byte[] bytes = new byte[1024];
+			while ((n = inputStream.read(bytes)) > 0) {
+				pngStream.write(bytes, 0, n);
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			try {
+				if (pngStream != null) {
+					pngStream.close();
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+	}
+
 }
