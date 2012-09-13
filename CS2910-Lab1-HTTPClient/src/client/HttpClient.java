@@ -19,6 +19,7 @@ public class HttpClient {
 
 	private static BufferedReader bufferedReader;
 	private static DataOutputStream outputStream;
+	private static DataInputStream inputStream;
 	private static FileOutputStream fos;
 	private static Socket socket;
 	private static File textFile;
@@ -29,6 +30,7 @@ public class HttpClient {
 	 */
 	public static void main(String[] args) {
 		UI ui = new UI();
+		ui.setVisible(true);
 	}
 
 	public static void startRequest(String hostName, int port, String resource) {
@@ -37,6 +39,7 @@ public class HttpClient {
 			bufferedReader = new BufferedReader(new InputStreamReader(
 					socket.getInputStream()));
 			outputStream = new DataOutputStream(socket.getOutputStream());
+			inputStream = new DataInputStream(socket.getInputStream());
 			textFile = new File("text.txt");
 			fos = new FileOutputStream(textFile);
 			socket.setSoTimeout(1000);
@@ -72,7 +75,7 @@ public class HttpClient {
 			System.out.println("done");
 
 			if (header.contentType == MimeType.png) {
-				savePNG(bufferedReader, header);
+				savePNG(inputStream, header);
 			}
 
 			// TODO call you method here
@@ -86,9 +89,9 @@ public class HttpClient {
 		} finally {
 			try {
 				fos.close();
-				// inputStream.close();
 				bufferedReader.close();
 				outputStream.close();
+				inputStream.close();
 				socket.close();
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -97,21 +100,13 @@ public class HttpClient {
 		}
 	}
 
-	private static void savePNG(BufferedReader br, HTTPHeader header) {
+	private static void savePNG(DataInputStream inputStream, HTTPHeader header) {
 		FileOutputStream pngStream = null;
-		DataInputStream inputStream = null;
+		
 		try {
 			inputStream = new DataInputStream(socket.getInputStream());
 			File pngFile = new File("abc.png");
 			pngStream = new FileOutputStream(pngFile);
-
-			// int bytesRead = 0;
-			// while(bytesRead < header.getContentLength()){
-			// byte content = (byte) br.read();
-			// pngStream.write(content);
-			// bytesRead++;
-			// }
-
 
 			int bytesRead = 0;
 			while (bytesRead < header.getContentLength()) {

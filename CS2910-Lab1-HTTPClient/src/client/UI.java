@@ -55,7 +55,7 @@ public class UI extends JFrame {
 		this.setResizable(Constants.WINDOW_RESIZEABLE);
 
 		initTextFieldsAndButtons();
-		this.setVisible(true);
+		
 	}
 
 	public void initTextFieldsAndButtons() {
