@@ -103,7 +103,6 @@ public class HttpClient {
 		FileOutputStream pngStream = null;
 		
 		try {
-			inputStream = new DataInputStream(socket.getInputStream());
 			File pngFile = new File("abc.png");
 			pngStream = new FileOutputStream(pngFile);
 
@@ -123,9 +122,6 @@ public class HttpClient {
 					pngStream.close();
 				}
 
-				if (inputStream != null) {
-					inputStream.close();
-				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
