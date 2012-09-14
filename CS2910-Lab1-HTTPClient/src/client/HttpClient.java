@@ -18,7 +18,7 @@ public class HttpClient {
 
 	public static final String CRLF = "\r\n";
 
-	private static BufferedReader bufferedReader;
+//	private static BufferedReader bufferedReader;
 	private static DataOutputStream outputStream;
 	private static DataInputStream inputStream;
 	private static FileOutputStream fos;
@@ -37,33 +37,43 @@ public class HttpClient {
 	public static void startRequest(String hostName, int port, String resource) {
 		try {
 			socket = new Socket(hostName, port);
-			bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//			bufferedReader = new BufferedReader(new InputStreamReader(
+//					socket.getInputStream()));
 			outputStream = new DataOutputStream(socket.getOutputStream());
 			inputStream = new DataInputStream(socket.getInputStream());
 			textFile = new File("text.txt");
 			fos = new FileOutputStream(textFile);
-			//socket.setSoTimeout(1000);
+			socket.setSoTimeout(3000);
 			header = new HTTPHeader();
 
 			outputStream.writeBytes("GET " + resource + " HTTP/1.1" + CRLF
 					+ "Host: " + hostName + CRLF + CRLF);
-
-			String s = bufferedReader.readLine();
+			
 			header.setLocation(hostName);
-			while (!s.equals("")) {
-				System.out.println(s);
-				s = bufferedReader.readLine();
+			
+			String s = "";
+			while (!s.equals("\r\n")) {
+				StringBuilder sb = new StringBuilder();
+				while(!sb.toString().endsWith("\r\n")){
+					sb.append((char) socket.getInputStream().read());
+				}
+				s = sb.toString();
+				System.out.print(s);
 				if (s.contains(Constants.CONTENT_TYPE)) {
-					//Looks for the semi-colon that indicates a charset is given, this will
-					//successfully take out the Content-Type
+					// Looks for the semi-colon that indicates a charset is
+					// given, this will
+					// successfully take out the Content-Type
 					int index = s.indexOf(";");
 					boolean added;
 					if (index == -1) {
-						//System.out.println(s.substring(s.indexOf(":") + 1).trim());
-						added = header.setContentType(s.substring(s.indexOf(":") + 1).trim());
+						// System.out.println(s.substring(s.indexOf(":") +
+						// 1).trim());
+						added = header.setContentType(s.substring(
+								s.indexOf(":") + 1).trim());
 					} else {
-						//System.out.println(s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
-						added = header.setContentType(s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
+						// System.out.println(s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
+						added = header.setContentType(s.substring(
+								s.indexOf(":") + 1, s.indexOf(";")).trim());
 					}
 					if (!added) {
 						System.out.println("Content-Type was not valid.");
@@ -80,12 +90,12 @@ public class HttpClient {
 					}
 				}
 			}
-			
-			if (header.contentType == MimeType.png) {
+
+
 				saveRawBytes(inputStream, header, resource);
-			}
-			//Prints out the human readable HTTPHeader class
-			System.out.println("\n\n"+header.toString());
+			
+			// Prints out the human readable HTTPHeader class
+			System.out.println("\n\n" + header.toString());
 			// TODO call you method here
 
 		} catch (SocketTimeoutException ste) {
@@ -97,7 +107,7 @@ public class HttpClient {
 		} finally {
 			try {
 				fos.close();
-				bufferedReader.close();
+//				bufferedReader.close();
 				outputStream.close();
 				inputStream.close();
 				socket.close();
@@ -108,30 +118,38 @@ public class HttpClient {
 		}
 	}
 
+	private static void saveRawBytes(DataInputStream inputStream,
+			HTTPHeader header, String resource) {
 
-	private static void saveRawBytes(DataInputStream inputStream, HTTPHeader header, String resource) {
-		
-		String extension = "";
-		int index = resource.lastIndexOf('.');
-		if(index >= 0){
-			extension = resource.substring(index);
+		String name = "GenericOutput";
+		int index = resource.lastIndexOf('/');
+		if (index >= 0) {
+			name = resource.substring(index+1);
 		}
-		
+
 		FileOutputStream pngStream = null;
 		try {
-			File pngFile = new File("output" + extension);
+			File pngFile = new File(name);
 			pngStream = new FileOutputStream(pngFile);
-			
-			int bytesRead = 0;
-			while (bytesRead < header.getContentLength()) {
-				int byteToWrite = inputStream.read();
-				//System.out.println(""+byteToWrite);
-				
-					pngStream.write(byteToWrite);
-					bytesRead++;
-				
+			int totalBytesRead = 0;
+			byte[] data = new byte[1024];
+			while (totalBytesRead < header.getContentLength()) {
+				int toRead = Math.min(1024, header.getContentLength()
+						- totalBytesRead);
+				int readBytes = inputStream.read(data, 0, toRead);
+				// System.out.println(""+byteToWrite);
+				if (readBytes > 0) {
+					pngStream.write(data);
+					totalBytesRead += readBytes;
+				} else {
+					System.out
+							.println("Could note read to EOF. Total bytes read: "
+									+ totalBytesRead
+									+ ". Supposed to have read: "
+									+ header.getContentLength());
+					totalBytesRead = header.getContentLength();
+				}
 			}
-
 
 		} catch (IOException e) {
 			e.printStackTrace();
