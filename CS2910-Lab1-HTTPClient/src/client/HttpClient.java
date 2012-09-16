@@ -180,16 +180,10 @@ public class HttpClient {
         boolean allGood = true;
         
         // Break mime types into general categories & handle the HTTP body
-        switch (header.getGenericContentType()) {
-            case TEXT:
-                parseText();
-                break;
-            case RAW:
-                saveRawBytes(resource);
-                break;
-            default:
-                System.out.println("Invalid content type");
-                allGood = false;
+        if (header.getGenericContentType() == Constants.GenericContentType.TEXT) {
+            parseText();
+        }else {
+            saveRawBytes(resource);
         }
         
         return allGood;
