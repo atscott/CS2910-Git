@@ -55,7 +55,7 @@ public class UI extends JFrame {
 		this.setResizable(Constants.WINDOW_RESIZEABLE);
 
 		initTextFieldsAndButtons();
-		this.setVisible(true);
+		
 	}
 
 	public void initTextFieldsAndButtons() {
@@ -110,25 +110,29 @@ public class UI extends JFrame {
 						&& txtPortNumber.getText().length() > 0
 						&& txtHostName.getText().length() > 0) {
 					if (!UI.this.validateHostName() && !UI.this.validatePortNumber()) {
+						String resource = txtResourceID.getText();
+						try {
+							if (resource.charAt(0) != '/') {
+								resource = "/"+resource;
+							}
+						} catch (StringIndexOutOfBoundsException sioobe) {
+							resource = "/";
+						}
 						HttpClient.startRequest(txtHostName.getText(),
 								Integer.parseInt(txtPortNumber.getText()),
-								txtResourceID.getText());
+								resource);
 					}
 				}
 			}
-
 			@Override
 			public void mouseEntered(MouseEvent arg0) {
 			}
-
 			@Override
 			public void mouseExited(MouseEvent arg0) {
 			}
-
 			@Override
 			public void mousePressed(MouseEvent arg0) {
 			}
-
 			@Override
 			public void mouseReleased(MouseEvent arg0) {
 			}

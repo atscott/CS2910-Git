@@ -1,6 +1,7 @@
 
 package client;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,133 +18,159 @@ import client.Constants.MimeType;
 
 public class HttpClient {
 
-    public static final String CRLF = "\r\n";
+	public static final String CRLF = "\r\n";
 
-    private static BufferedReader bufferedReader;
-    private static DataOutputStream outputStream;
-    private static FileOutputStream fos;
-    private static Socket socket;
-    private static File textFile;
-    private static HTTPHeader header;
+	private static BufferedReader bufferedReader;
+	private static DataOutputStream outputStream;
+	private static DataInputStream inputStream;
+	private static FileOutputStream fos;
+	private static Socket socket;
+	private static File textFile;
+	private static HTTPHeader header;
 
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-        UI ui = new UI();
-    }
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		UI ui = new UI();
+		ui.setVisible(true);
+	}
 
-    public static void startRequest(String hostName, int port, String resource) {
-        try {
-            socket = new Socket(hostName, port);
-            bufferedReader = new BufferedReader(new InputStreamReader(
-                    socket.getInputStream()));
-            outputStream = new DataOutputStream(socket.getOutputStream());
-            textFile = new File("text.txt");
+	public static void startRequest(String hostName, int port, String resource) {
+		try {
+			socket = new Socket(hostName, port);
+			bufferedReader = new BufferedReader(new InputStreamReader(
+					socket.getInputStream()));
+			outputStream = new DataOutputStream(socket.getOutputStream());
+			inputStream = new DataInputStream(socket.getInputStream());
+			textFile = new File("text.txt");
             textFile.delete();
             textFile.createNewFile();
             fos = new FileOutputStream(textFile, true);
-            socket.setSoTimeout(1000);
-            header = new HTTPHeader();
+			socket.setSoTimeout(3000);
+			header = new HTTPHeader();
 
-            outputStream.writeBytes("GET " + resource + " HTTP/1.1" + CRLF
-                    + "Host: " + hostName + CRLF + CRLF);
+			outputStream.writeBytes("GET " + resource + " HTTP/1.1" + CRLF
+					+ "Host: " + hostName + CRLF + CRLF);
+			
+			header.setLocation(hostName);
+			
+			String s = "";
+			while (!s.equals("\r\n")) {
+				StringBuilder sb = new StringBuilder();
+				while(!sb.toString().endsWith("\r\n")){
+					sb.append((char) socket.getInputStream().read());
+				}
+				s = sb.toString();
+				System.out.print(s);
+				if (s.contains(Constants.CONTENT_TYPE)) {
+					// Looks for the semi-colon that indicates a charset is
+					// given, this will
+					// successfully take out the Content-Type
+					int index = s.indexOf(";");
+					boolean added;
+					if (index == -1) {
+						// System.out.println(s.substring(s.indexOf(":") +
+						// 1).trim());
+						added = header.setContentType(s.substring(
+								s.indexOf(":") + 1).trim());
+					} else {
+						// System.out.println(s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
+						added = header.setContentType(s.substring(
+								s.indexOf(":") + 1, s.indexOf(";")).trim());
+					}
+					if (!added) {
+						System.out.println("Content-Type was not valid.");
+					}
+				}
+				if (s.contains(Constants.CONTENT_LENGTH)) {
 
-            String s = bufferedReader.readLine();
-            header.setLocation(hostName);
-            while (!s.equals("")) {
-                System.out.println(s);
-                s = bufferedReader.readLine();
-                if (s.contains(Constants.CONTENT_TYPE)) {
-                    boolean added = header.setContentType(s.substring(
-                            s.indexOf(":") + 1).trim());
-                    if (!added) {
-                        System.out
-                                .println("Content-Type was not valid.\nExiting");
-                    }
-                }
-                if (s.contains(Constants.CONTENT_LENGTH)) {
+					header.setContentLength(Integer.parseInt(s.substring(
+							s.indexOf(":") + 1).trim()));
+				}
+				if (s.contains(Constants.TRANSFER_ENCODING)) {
+					if (s.contains("chunked")) {
+						header.setChunkedEncoding(true);
+					}
+				}
+			}
 
-                    header.setContentLength(Integer.parseInt(s.substring(
-                            s.indexOf(":") + 1).trim()));
-                }
-                if (s.contains(Constants.TRANSFER_ENCODING)) {
-                    if (s.contains("chunked")) {
-                        header.setChunkedEncoding(true);
-                    }
-                }
-            }
-            System.out.println("done");
+				saveRawBytes(inputStream, header, resource);
+			
+			// Prints out the human readable HTTPHeader class
+			System.out.println("\n\n" + header.toString());
+			// TODO call you method here
 
-            if (header.contentType == MimeType.png) {
-                savePNG(bufferedReader, header);
-            }
+		} catch (SocketTimeoutException ste) {
+			System.out.println("connection timed out");
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				fos.close();
+//				bufferedReader.close();
+				outputStream.close();
+				inputStream.close();
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 
-            // TODO call you method here
-            parseHtml();
+		}
+	}
 
-        } catch (SocketTimeoutException ste) {
-            System.out.println("connection timed out");
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                fos.close();
-                // inputStream.close();
-                bufferedReader.close();
-                outputStream.close();
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+	private static void saveRawBytes(DataInputStream inputStream,
+			HTTPHeader header, String resource) {
 
-        }
-    }
+		String name = "GenericOutput";
+		int index = resource.lastIndexOf('/');
+		if (index >= 0) {
+			name = resource.substring(index+1);
+		}
 
-    private static void savePNG(BufferedReader br, HTTPHeader header) {
-        FileOutputStream pngStream = null;
-        DataInputStream inputStream = null;
-        try {
-            inputStream = new DataInputStream(socket.getInputStream());
-            File pngFile = new File("abc.png");
-            pngStream = new FileOutputStream(pngFile);
+		FileOutputStream pngStream = null;
+		try {
+			File pngFile = new File(name);
+			pngStream = new FileOutputStream(pngFile);
+			int totalBytesRead = 0;
+			byte[] data = new byte[1024];
+			while (totalBytesRead < header.getContentLength()) {
+				int toRead = Math.min(1024, header.getContentLength()
+						- totalBytesRead);
+				int readBytes = inputStream.read(data, 0, toRead);
+				// System.out.println(""+byteToWrite);
+				if (readBytes > 0) {
+					pngStream.write(data);
+					totalBytesRead += readBytes;
+				} else {
+					System.out
+							.println("Could note read to EOF. Total bytes read: "
+									+ totalBytesRead
+									+ ". Supposed to have read: "
+									+ header.getContentLength());
+					totalBytesRead = header.getContentLength();
+				}
+			}
 
-            // int bytesRead = 0;
-            // while(bytesRead < header.getContentLength()){
-            // byte content = (byte) br.read();
-            // pngStream.write(content);
-            // bytesRead++;
-            // }
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (pngStream != null) {
+					pngStream.close();
+				}
 
-            int bytesRead = 0;
-            while (bytesRead < header.getContentLength()) {
-                pngStream.write(inputStream.read());
-                bytesRead++;
-            }
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } finally {
-            try {
-                if (pngStream != null) {
-                    pngStream.close();
-                }
-
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-
-    }
-
-    private static void parseHtml() {
+	}
+	
+	private static void parseHtml() {
         if (header.chunkedEncoding) {
             parseChunkedHtml();
         } else {
