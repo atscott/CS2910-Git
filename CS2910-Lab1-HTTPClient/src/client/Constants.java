@@ -10,6 +10,10 @@ public class Constants {
 	public static final String CONTENT_LENGTH = "Content-Length";
 	public static final String TRANSFER_ENCODING = "Transfer-Encoding";
 	
+	public enum GenericContentType {
+	    TEXT, RAW
+	}
+	
 	public enum MimeType {
 	    $323 ("text/h323"),
 	    $3gp ("video/3gpp"),

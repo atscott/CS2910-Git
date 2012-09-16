@@ -64,6 +64,14 @@ public class HTTPHeader {
 		}
 		return validType;
 	}
+	
+	public Constants.GenericContentType getGenericContentType() {
+	    if (this.contentType.contentType.contains("text/")) {
+	        return Constants.GenericContentType.TEXT;
+	    } else {
+	        return Constants.GenericContentType.RAW;
+	    }
+	}
 
 	public void setChunkedEncoding(boolean chunkedEncoding) {
 		this.chunkedEncoding = chunkedEncoding;
