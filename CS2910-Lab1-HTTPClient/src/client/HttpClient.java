@@ -129,7 +129,6 @@ public class HttpClient {
         while (!s.equals(CRLF)) {
             StringBuilder sb = new StringBuilder();
             while (!sb.toString().endsWith(CRLF)) {
-                // FIXME switch this to global variable
                 try {
                     sb.append((char) inputStream.read());
                 } catch (IOException e) {
