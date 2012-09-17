@@ -1,4 +1,3 @@
-
 package client;
 
 import java.io.BufferedReader;
@@ -13,345 +12,430 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+/**
+ * 
+ * @author Andrew, Marius, Josh
+ * 
+ *         This class is able to create a socket with a given host, send a
+ *         request to the host, and interpret the response. THe response data is
+ *         saved to a file.
+ */
 public class HttpClient {
 
-    public static final String CRLF = "\r\n";
+	/**
+	 * carriage return, line feed as string
+	 */
+	public static final String CRLF = "\r\n";
 
-    private static DataInputStream inputStream;
-    private static Socket socket;
-    private static HTTPHeader header;
+	/**
+	 * The inputStream of the socket
+	 */
+	private static DataInputStream inputStream;
+	/**
+	 * The socket that is used for the connection to the server
+	 */
+	private static Socket socket;
+	/**
+	 * The header data that was parsed from the server response
+	 */
+	private static HTTPHeader header;
 
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-        UI ui = new UI();
-        ui.setVisible(true);
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		UI ui = new UI();
+		ui.setVisible(true);
 
-        // Include a shutdown hook to close connections and streams. This is not guaranteed to run
-        // if the JVM exits ungracefully.
-        Runtime.getRuntime().addShutdownHook(new Thread() {
+		// Include a shutdown hook to close connections and streams. This is not
+		// guaranteed to run
+		// if the JVM exits ungracefully.
+		Runtime.getRuntime().addShutdownHook(new Thread() {
 
-            @Override
-            public void run() {
-                if (socket != null) {
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        System.out.println("unable to close the socket.");
-                        e.printStackTrace();
-                    }
-                }
-                
-                
-                if (inputStream != null) {
-                    try {
-                        inputStream.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-    }
+			@Override
+			public void run() {
+				if (socket != null) {
+					try {
+						socket.close();
+					} catch (IOException e) {
+						System.out.println("unable to close the socket.");
+						e.printStackTrace();
+					}
+				}
 
-    public static void startRequest(String hostName, int port, String resource) {
-        boolean allGood = true;
+				if (inputStream != null) {
+					try {
+						inputStream.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		});
+	}
 
-        allGood = connectToHost(hostName, port);
+	/**
+	 * Starts the socket request for data
+	 * 
+	 * @param hostName
+	 *            hostname used for socket
+	 * @param port
+	 *            port used for the socket
+	 * @param resource
+	 *            resource ID to retrieve
+	 */
+	public static void startRequest(String hostName, int port, String resource) {
+		boolean allGood = true;
 
-        if (allGood) {
-            allGood = sendRequest(hostName, resource);
-        }
-        
-        if (allGood) {
-            allGood = getData();
-        }
+		allGood = connectToHost(hostName, port);
 
-        if (allGood) {
-            allGood = parseHeader(hostName);
-        }
+		if (allGood) {
+			allGood = sendRequest(hostName, resource);
+		}
 
-        if (allGood) {
-            allGood = parseBody(resource);
-        }
-    }
+		if (allGood) {
+			allGood = getData();
+		}
 
-    private static boolean connectToHost(String hostName, int port) {
-        boolean allGood = true;
+		if (allGood) {
+			allGood = parseHeader(hostName);
+		}
 
-        // Is closed in shutdown hook
-        try {
-            socket = new Socket(hostName, port);
-            socket.setSoTimeout(3000);
-        } catch (SocketTimeoutException ste) {
-            System.out.println("connection timed out");
-            allGood = false;
-        } catch (UnknownHostException e) {
+		if (allGood) {
+			allGood = parseBody(resource);
+		}
+	}
 
-            // Might happen if server goes offline between check in UI and socket call in here
-            System.out.println("Is the server offline?");
-            allGood = false;
-            e.printStackTrace();
-        } catch (IOException e) {
-            allGood = false;
-            e.printStackTrace();
-        }
-        
-        return allGood;
-    }
+	/**
+	 * Connects to host via the socket
+	 * 
+	 * @param hostName
+	 *            hostname to connect to
+	 * @param port
+	 *            port to connect through
+	 * @return true if connected successfully. false if error.
+	 */
+	private static boolean connectToHost(String hostName, int port) {
+		boolean allGood = true;
 
-    private static boolean sendRequest(String hostName, String resource) {
-        boolean allGood = true;
+		// Is closed in shutdown hook
+		try {
+			socket = new Socket(hostName, port);
+			socket.setSoTimeout(3000);
+		} catch (SocketTimeoutException ste) {
+			System.out.println("connection timed out");
+			allGood = false;
+		} catch (UnknownHostException e) {
 
-        // Is closed along with socket in shutdown hook automatically. no explicit instructions need to be given.
-        DataOutputStream outputStream = null;
-        try {
-            outputStream = new DataOutputStream(socket.getOutputStream());
-            outputStream.writeBytes("GET " + resource + " HTTP/1.1" + CRLF
-                    + "Host: " + hostName + CRLF + CRLF);
-        } catch (IOException e) {
-            System.out
-                    .println("Unable to send the HTTP request. Check your inputs and try again.");
-            allGood = false;
-        }
+			// Might happen if server goes offline between check in UI and
+			// socket call in here
+			System.out.println("Is the server offline?");
+			allGood = false;
+			e.printStackTrace();
+		} catch (IOException e) {
+			allGood = false;
+			e.printStackTrace();
+		}
 
-        return allGood;
-    }
+		return allGood;
+	}
 
-    private static boolean parseHeader(String hostName) {
-        boolean allGood = true;
+	/**
+	 * sends a request to the host for a resource
+	 * 
+	 * @param hostName
+	 *            the host to get data from
+	 * @param resource
+	 *            the resource to retrieve
+	 * @return true if successful. false if error
+	 */
+	private static boolean sendRequest(String hostName, String resource) {
+		boolean allGood = true;
 
-        header = new HTTPHeader();
-        header.setLocation(hostName);
+		// Is closed along with socket in shutdown hook automatically. no
+		// explicit instructions need to be given.
+		DataOutputStream outputStream = null;
+		try {
+			outputStream = new DataOutputStream(socket.getOutputStream());
+			outputStream.writeBytes("GET " + resource + " HTTP/1.1" + CRLF
+					+ "Host: " + hostName + CRLF + CRLF);
+		} catch (IOException e) {
+			System.out
+					.println("Unable to send the HTTP request. Check your inputs and try again.");
+			allGood = false;
+		}
 
-        String s = "";
-        while (!s.equals(CRLF)) {
-            StringBuilder sb = new StringBuilder();
-            while (!sb.toString().endsWith(CRLF)) {
-                try {
-                    sb.append((char) inputStream.read());
-                } catch (IOException e) {
-                    System.out.println("Unable to read header information from the host.");
-                    e.printStackTrace();
-                }
-            }
-            s = sb.toString();
-            System.out.print(s);
-            if (s.contains(Constants.CONTENT_TYPE)) {
-                // Looks for the semi-colon that indicates a charset is
-                // given, this will
-                // successfully take out the Content-Type
-                int index = s.indexOf(";");
-                boolean added;
-                if (index == -1) {
-                    // System.out.println(s.substring(s.indexOf(":") +
-                    // 1).trim());
-                    added = header.setContentType(s.substring(
-                            s.indexOf(":") + 1).trim());
-                } else {
-                    // System.out.println(s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
-                    added = header.setContentType(s.substring(
-                            s.indexOf(":") + 1, s.indexOf(";")).trim());
-                }
-                if (!added) {
-                    System.out.println("Content-Type was not valid.");
-                }
-            }
-            if (s.contains(Constants.CONTENT_LENGTH)) {
+		return allGood;
+	}
 
-                header.setContentLength(Integer.parseInt(s.substring(
-                        s.indexOf(":") + 1).trim()));
-            }
-            if (s.contains(Constants.TRANSFER_ENCODING)) {
-                if (s.contains("chunked")) {
-                    header.setChunkedEncoding(true);
-                }
-            }
-        }
+	/**
+	 * After sending a request for data, parses the header of the response from
+	 * the server and updates the header attribute with the information
+	 * 
+	 * @param hostName
+	 *            the hostname
+	 * @return true if successful. false if error.
+	 */
+	private static boolean parseHeader(String hostName) {
+		boolean allGood = true;
 
-        // Prints out the human readable HTTPHeader class
-        System.out.println("\n\n" + header.toString());
+		header = new HTTPHeader();
+		header.setLocation(hostName);
 
-        return allGood;
-    }
+		String s = "";
+		while (!s.equals(CRLF)) {
+			StringBuilder sb = new StringBuilder();
+			while (!sb.toString().endsWith(CRLF)) {
+				try {
+					sb.append((char) inputStream.read());
+				} catch (IOException e) {
+					System.out
+							.println("Unable to read header information from the host.");
+					e.printStackTrace();
+				}
+			}
+			s = sb.toString();
+			System.out.print(s);
+			if (s.contains(Constants.CONTENT_TYPE)) {
+				// Looks for the semi-colon that indicates a charset is
+				// given, this will
+				// successfully take out the Content-Type
+				int index = s.indexOf(";");
+				boolean added;
+				if (index == -1) {
+					// System.out.println(s.substring(s.indexOf(":") +
+					// 1).trim());
+					added = header.setContentType(s.substring(
+							s.indexOf(":") + 1).trim());
+				} else {
+					// System.out.println(s.substring(s.indexOf(":")+1,s.indexOf(";")).trim());
+					added = header.setContentType(s.substring(
+							s.indexOf(":") + 1, s.indexOf(";")).trim());
+				}
+				if (!added) {
+					System.out.println("Content-Type was not valid.");
+				}
+			}
+			if (s.contains(Constants.CONTENT_LENGTH)) {
 
-    private static boolean parseBody(String resource) {
-        boolean allGood = true;
-        
-        // Break mime types into general categories & handle the HTTP body
-        if (header.getGenericContentType() == Constants.GenericContentType.TEXT) {
-            parseText();
-        }else {
-            saveRawBytes(resource);
-        }
-        
-        return allGood;
-    }
-    
-    private static boolean getData() {
-        boolean allGood = true;
-        
-        try {
-            inputStream = new DataInputStream(socket.getInputStream());
-        } catch (IOException e) {
-            System.out.println("Unable to receive data from the host.\n");
-            e.printStackTrace();
-            allGood = false;
-        }
-        
-        return allGood;
-    }
+				header.setContentLength(Integer.parseInt(s.substring(
+						s.indexOf(":") + 1).trim()));
+			}
+			if (s.contains(Constants.TRANSFER_ENCODING)) {
+				if (s.contains("chunked")) {
+					header.setChunkedEncoding(true);
+				}
+			}
+		}
 
-    private static void saveRawBytes(String resource) {
+		// Prints out the human readable HTTPHeader class
+		System.out.println("\n\n" + header.toString());
 
-        String name = "GenericOutput";
-        int index = resource.lastIndexOf('/');
-        if (index >= 0) {
-            name = resource.substring(index + 1);
-        }
+		return allGood;
+	}
 
-        FileOutputStream pngStream = null;
-        try {
-            File pngFile = new File(name);
-            pngStream = new FileOutputStream(pngFile);
-            int totalBytesRead = 0;
-            byte[] data = new byte[1024];
-            while (totalBytesRead < header.getContentLength()) {
-                int toRead = Math.min(1024, header.getContentLength()
-                        - totalBytesRead);
-                int readBytes = inputStream.read(data, 0, toRead);
-                // System.out.println(""+byteToWrite);
-                if (readBytes > 0) {
-                    pngStream.write(data);
-                    totalBytesRead += readBytes;
-                } else {
-                    System.out
-                            .println("Could not read to EOF. Total bytes read: "
-                                    + totalBytesRead
-                                    + ". Supposed to have read: "
-                                    + header.getContentLength());
-                    totalBytesRead = header.getContentLength();
-                }
-            }
+	/**
+	 * after the header information was retrieved, parses the body's information
+	 * from the inputstream of the socket
+	 * 
+	 * @param resource
+	 *            resource id that was retrieved
+	 * @return true if successful. false if error.
+	 */
+	private static boolean parseBody(String resource) {
+		boolean allGood = true;
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (pngStream != null) {
-                    pngStream.close();
-                }
+		// Break mime types into general categories & handle the HTTP body
+		if (header.getGenericContentType() == Constants.GenericContentType.TEXT) {
+			parseText();
+		} else {
+			saveRawBytes(resource);
+		}
 
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
+		return allGood;
+	}
 
-    }
+	/**
+	 * gets the inputstream from the socket and assigns it to the attribute
+	 * inputStream
+	 * 
+	 * @return true if successful. false if error.
+	 */
+	private static boolean getData() {
+		boolean allGood = true;
 
-    /**
-     * Creates a new file using the location as a filename and mime type as an extension.
-     */
-    private static void parseText() {
+		try {
+			inputStream = new DataInputStream(socket.getInputStream());
+		} catch (IOException e) {
+			System.out.println("Unable to receive data from the host.\n");
+			e.printStackTrace();
+			allGood = false;
+		}
 
-        // Create a unique filename for the data being retrieved
-        String filename = header.getLocation();
-        filename = filename.replace('.', '-');
+		return allGood;
+	}
 
-        // Add the proper extension based on mime type
-        filename = filename.concat("." + header.getContentType().contentType.substring(5));
+	/**
+	 * If the resource is raw data, this simply reads the bytes and writes them
+	 * to a file.
+	 * 
+	 * @param resource
+	 *            The resource ID that was retrieved. Used to get valid
+	 *            extension for file.
+	 */
+	private static void saveRawBytes(String resource) {
 
-        // Create the new file. Ensure it is available and clean
-        File output = new File(filename);
-        output.delete();
-        try {
-            output.createNewFile();
-        } catch (IOException e) {
-            System.out.println("Unable to create the new file");
-        }
+		String name = "GenericOutput";
+		int index = resource.lastIndexOf('/');
+		if (index >= 0) {
+			name = resource.substring(index + 1);
+		}
 
-        if (header.chunkedEncoding) {
-            parseChunkedText(output);
-        } else {
-            parseUnchunckedText(output);
-        }
+		FileOutputStream pngStream = null;
+		try {
+			File pngFile = new File(name);
+			pngStream = new FileOutputStream(pngFile);
+			int totalBytesRead = 0;
+			byte[] data = new byte[1024];
+			while (totalBytesRead < header.getContentLength()) {
+				int toRead = Math.min(1024, header.getContentLength()
+						- totalBytesRead);
+				int readBytes = inputStream.read(data, 0, toRead);
+				// System.out.println(""+byteToWrite);
+				if (readBytes > 0) {
+					pngStream.write(data);
+					totalBytesRead += readBytes;
+				} else {
+					System.out
+							.println("Could not read to EOF. Total bytes read: "
+									+ totalBytesRead
+									+ ". Supposed to have read: "
+									+ header.getContentLength());
+					totalBytesRead = header.getContentLength();
+				}
+			}
 
-    }
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (pngStream != null) {
+					pngStream.close();
+				}
 
-    /**
-     * Reads and writes chunked text content to a file
-     */
-    private static void parseChunkedText(File output) {
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 
-        PrintWriter mWriter = null;
-        BufferedReader bufferedReader = null;
+	}
 
-        try {
-            mWriter = new PrintWriter(output);
-            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-            for (String line; (line = bufferedReader.readLine()) != null;) {
+	/**
+	 * Creates a new file using the location as a filename and mime type as an
+	 * extension.
+	 */
+	private static void parseText() {
 
-                try {
-                    if (Integer.parseInt(line) == 0) {
-                        break;
-                    }
+		// Create a unique filename for the data being retrieved
+		String filename = header.getLocation();
+		filename = filename.replace('.', '-');
 
-                } catch (NumberFormatException nfe) {
-                    // Ignore this exception.
-                }
+		// Add the proper extension based on mime type
+		filename = filename.concat("."
+				+ header.getContentType().contentType.substring(5));
 
-                mWriter.append(line);
-            }
-        } catch (IOException e) {
-            System.out.println("Unable to write chunked text to file");
-        } finally {
-            if (mWriter != null) {
-                mWriter.close();
-            }
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+		// Create the new file. Ensure it is available and clean
+		File output = new File(filename);
+		output.delete();
+		try {
+			output.createNewFile();
+		} catch (IOException e) {
+			System.out.println("Unable to create the new file");
+		}
 
-    }
+		if (header.chunkedEncoding) {
+			parseChunkedText(output);
+		} else {
+			parseUnchunckedText(output);
+		}
 
-    /**
-     * Reads and writes unchunked text content to a file
-     */
-    private static void parseUnchunckedText(File output) {
+	}
 
-        PrintWriter mWriter = null;
-        BufferedReader bufferedReader = null;
+	/**
+	 * Reads and writes chunked text content to a file
+	 */
+	private static void parseChunkedText(File output) {
 
-        int expectedCount = header.contentLength;
+		PrintWriter mWriter = null;
+		BufferedReader bufferedReader = null;
 
-        try {
-            mWriter = new PrintWriter(output);
-            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-            for (int i = 0; i < expectedCount; i++) {
-                char toPrint = (char) bufferedReader.read();
-                mWriter.append(toPrint);
-            }
+		try {
+			mWriter = new PrintWriter(output);
+			bufferedReader = new BufferedReader(new InputStreamReader(
+					inputStream));
+			for (String line; (line = bufferedReader.readLine()) != null;) {
 
-        } catch (IOException e) {
-            System.out.println("Unable to write unchunked text to file");
-        } finally {
-            if (mWriter != null) {
-                mWriter.close();
-            }
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+				try {
+					if (Integer.parseInt(line) == 0) {
+						break;
+					}
+
+				} catch (NumberFormatException nfe) {
+					// Ignore this exception.
+				}
+
+				mWriter.append(line);
+			}
+		} catch (IOException e) {
+			System.out.println("Unable to write chunked text to file");
+		} finally {
+			if (mWriter != null) {
+				mWriter.close();
+			}
+			if (bufferedReader != null) {
+				try {
+					bufferedReader.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+	}
+
+	/**
+	 * Reads and writes unchunked text content to a file
+	 */
+	private static void parseUnchunckedText(File output) {
+
+		PrintWriter mWriter = null;
+		BufferedReader bufferedReader = null;
+
+		int expectedCount = header.contentLength;
+
+		try {
+			mWriter = new PrintWriter(output);
+			bufferedReader = new BufferedReader(new InputStreamReader(
+					inputStream));
+			for (int i = 0; i < expectedCount; i++) {
+				char toPrint = (char) bufferedReader.read();
+				mWriter.append(toPrint);
+			}
+
+		} catch (IOException e) {
+			System.out.println("Unable to write unchunked text to file");
+		} finally {
+			if (mWriter != null) {
+				mWriter.close();
+			}
+			if (bufferedReader != null) {
+				try {
+					bufferedReader.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 }
