@@ -42,8 +42,7 @@ public class HttpClient {
                         e.printStackTrace();
                     }
                 }
-                
-                
+
                 if (inputStream != null) {
                     try {
                         inputStream.close();
@@ -63,7 +62,7 @@ public class HttpClient {
         if (allGood) {
             allGood = sendRequest(hostName, resource);
         }
-        
+
         if (allGood) {
             allGood = getData();
         }
@@ -97,14 +96,15 @@ public class HttpClient {
             allGood = false;
             e.printStackTrace();
         }
-        
+
         return allGood;
     }
 
     private static boolean sendRequest(String hostName, String resource) {
         boolean allGood = true;
 
-        // Is closed along with socket in shutdown hook automatically. no explicit instructions need to be given.
+        // Is closed along with socket in shutdown hook automatically. no explicit instructions need
+        // to be given.
         DataOutputStream outputStream = null;
         try {
             outputStream = new DataOutputStream(socket.getOutputStream());
@@ -119,6 +119,11 @@ public class HttpClient {
         return allGood;
     }
 
+    /**
+     * Extracts crtitical information from the header
+     * @param hostName Name of the host server
+     * @return True if the header is parsed properly
+     */
     private static boolean parseHeader(String hostName) {
         boolean allGood = true;
 
@@ -176,22 +181,35 @@ public class HttpClient {
         return allGood;
     }
 
+    /**
+     * Handles converting the data sent as the body into a usable form on the client pc.
+     * @param resource
+     * @return True if no errors occurred while parsing the data
+     */
     private static boolean parseBody(String resource) {
         boolean allGood = true;
-        
+
         // Break mime types into general categories & handle the HTTP body
         if (header.getGenericContentType() == Constants.GenericContentType.TEXT) {
+            
+            // TODO return a boolean
             parseText();
-        }else {
+        } else {
+            
+         // TODO return a boolean
             saveRawBytes(resource);
         }
-        
+
         return allGood;
     }
-    
+
+    /**
+     * Connects to the data that the socket is returning from the server
+     * @return True if no errors occurred while establishing a connection to the data
+     */
     private static boolean getData() {
         boolean allGood = true;
-        
+
         try {
             inputStream = new DataInputStream(socket.getInputStream());
         } catch (IOException e) {
@@ -199,7 +217,7 @@ public class HttpClient {
             e.printStackTrace();
             allGood = false;
         }
-        
+
         return allGood;
     }
 
@@ -294,12 +312,13 @@ public class HttpClient {
             for (String line; (line = bufferedReader.readLine()) != null;) {
 
                 try {
+                    
+                    // Break the loop if we are at the end of the file
                     if (Integer.parseInt(line) == 0) {
                         break;
                     }
-
                 } catch (NumberFormatException nfe) {
-                    // Ignore this exception.
+                    // Ignore this exception. We force it quite often as we are using this as a test.
                 }
 
                 mWriter.append(line);
@@ -329,13 +348,18 @@ public class HttpClient {
         PrintWriter mWriter = null;
         BufferedReader bufferedReader = null;
 
+        // How many characters we expect to read
         int expectedCount = header.contentLength;
 
         try {
             mWriter = new PrintWriter(output);
             bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+            // Read the characters from the stream while we expect more columns
             for (int i = 0; i < expectedCount; i++) {
                 char toPrint = (char) bufferedReader.read();
+
+                // Write the information
                 mWriter.append(toPrint);
             }
 
