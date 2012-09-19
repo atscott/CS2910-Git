@@ -53,6 +53,12 @@ public class HTTPHeader {
 		this.location = location;
 	}
 
+	/**
+	 * Sets the content type only if it exists in the MimeType enum, contentType will be unchanged if the passed
+	 * in string is not valid
+	 * @param contentType
+	 * @return true if the content type was valid, otherwise false
+	 */
 	public boolean setContentType(String contentType) {
 		boolean validType = false;
 		for (int i = 0; i < Constants.MimeType.values().length; i++) {
@@ -81,6 +87,10 @@ public class HTTPHeader {
 		this.contentLength = contentLength;
 	}
 
+	/**
+	 * Overrides the Object's toString method to print out all the information about this HTTPHeader class
+	 * in human readable form
+	 */
 	@Override
 	public String toString() {
 		String header = "";

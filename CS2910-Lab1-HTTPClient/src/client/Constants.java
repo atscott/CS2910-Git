@@ -2,10 +2,20 @@ package client;
 
 public class Constants {
 
+	/**
+	 * height of the UI JFrame
+	 */
 	public static final int WINDOW_HEIGHT = 200;
+	
+	/**
+	 * width of the UI JFrame
+	 */
 	public static final int WINDOW_WIDTH = 700;
 	public static final boolean WINDOW_RESIZEABLE = false;
 	
+	/**
+	 * Strings that are returned by the server as part of the header
+	 */
 	public static final String CONTENT_TYPE = "Content-Type:";
 	public static final String CONTENT_LENGTH = "Content-Length";
 	public static final String TRANSFER_ENCODING = "Transfer-Encoding";
@@ -14,6 +24,11 @@ public class Constants {
 	    TEXT, RAW
 	}
 	
+	/**
+	 * Enum containing a list of valid MimeTypes
+	 * @author dev
+	 *
+	 */
 	public enum MimeType {
 	    $323 ("text/h323"),
 	    $3gp ("video/3gpp"),

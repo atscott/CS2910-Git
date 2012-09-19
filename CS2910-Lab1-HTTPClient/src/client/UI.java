@@ -24,6 +24,9 @@ import javax.swing.event.CaretListener;
 
 public class UI extends JFrame {
 
+	/**
+	 * UI elements to show textfields and button to run the program
+	 */
 	JTextField txtHostName;
 	JTextField txtPortNumber;
 	JTextField txtResourceID;
@@ -49,6 +52,9 @@ public class UI extends JFrame {
 		int x = (screenWidth - Constants.WINDOW_WIDTH) / 2;
 		int y = (screenHeight - Constants.WINDOW_HEIGHT) / 2;
 
+		/**
+		 * sets the size from the Constants class and centers the JFrame in the current window
+		 */
 		this.setBounds(x, y, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 		this.setSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -58,6 +64,14 @@ public class UI extends JFrame {
 		
 	}
 
+	/**
+	 * This method initializes the textfields to their correct lengths and buttons
+	 * with the correct titles and adds the OnClickListener or OnCaretListener for 
+	 * text fields.  The components are added to the JFrame as well using a GridBagLayout
+	 * 
+	 * The program will not run without checking to make sure the port number and host name
+	 * entered is valid.
+	 */
 	public void initTextFieldsAndButtons() {
 		JPanel outerPanel = new JPanel();
 		outerPanel.setLayout(new FlowLayout());
